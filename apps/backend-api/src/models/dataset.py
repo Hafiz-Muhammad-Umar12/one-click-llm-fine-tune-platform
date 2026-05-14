@@ -55,3 +55,28 @@ class DatasetProcessingJob(Base):
 
     # Relationships
     dataset_version: Mapped["DatasetVersion"] = relationship(back_populates="processing_jobs")
+
+class DatasetTrainingContract(Base):
+    """
+    The strict 'immutable' contract between a dataset and the training engine.
+    Ensures zero mismatch errors and perfect reproducibility.
+    """
+    __tablename__ = "dataset_training_contract"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    dataset_version_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("dataset_version.id", ondelete="CASCADE"), nullable=False)
+    
+    # Contract Details
+    tokenizer_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    max_seq_length: Mapped[int] = mapped_column(Integer, nullable=False)
+    format_type: Mapped[str] = mapped_column(String(50), nullable=False) # alpaca, chatml
+    preprocessing_hash: Mapped[str] = mapped_column(String(64), nullable=False) # SHA256 of pipeline config
+    
+    # Readiness Metadata
+    is_ready: Mapped[bool] = mapped_column(Boolean, default=False)
+    validation_report: Mapped[Dict[str, Any]] = mapped_column(JSONB, default=dict)
+    economic_estimates: Mapped[Dict[str, Any]] = mapped_column(JSONB, default=dict)
+    
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    dataset_version: Mapped["DatasetVersion"] = relationship()
