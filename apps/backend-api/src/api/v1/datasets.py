@@ -40,31 +40,24 @@ async def dataset_websocket(
     finally:
         manager.disconnect(user_id)
 
-@router.get("/{dataset_id}/versions/{version_id}/preview")
+from src.datasets.schemas.preview import PreviewResponse
+from src.datasets.services.preview import preview_service
+
+@router.get("/{dataset_id}/versions/{version_id}/preview", response_model=PreviewResponse)
 async def get_dataset_preview(
     dataset_id: uuid.UUID,
     version_id: uuid.UUID,
     tokenizer_name: str = "meta-llama/Llama-3-8b",
+    max_seq_length: int = 2048,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    version = await db.get(DatasetVersion, version_id)
-    if not version:
-        raise HTTPException(status_code=404, detail="Version not found")
-    
-    dataset = await db.get(Dataset, version.dataset_id)
-    
-    # In production, we'd stream a few lines from storage
-    storage = dataset_service.storage
-    file_stream = await storage.download_file(version.s3_uri)
-    content = file_stream.read()
-    
-    from src.datasets.parsers.jsonl import JSONLParser
-    parser = JSONLParser()
-    data = parser.parse(content)
-    
-    preview_engine = DatasetPreviewEngine(tokenizer_name=tokenizer_name)
-    return preview_engine.get_preview(data, format_type=dataset.base_format)
+    return await preview_service.get_preview(
+        db, 
+        version_id=version_id, 
+        tokenizer_name=tokenizer_name, 
+        max_seq_length=max_seq_length
+    )
 
 @router.post("/{dataset_id}/versions/{version_id}/finalize")
 async def finalize_dataset(
