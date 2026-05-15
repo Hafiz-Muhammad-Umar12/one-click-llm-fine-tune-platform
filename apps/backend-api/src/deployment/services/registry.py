@@ -5,7 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from opentelemetry import trace
 
 from src.models.deployment import RegisteredModel, ModelVersion, ModelArtifact
-from src.deployment.repositories.registry import registered_model_repo, model_version_repo
+from src.deployment.repositories.registry import (
+    registered_model_repo, 
+    model_version_repo, 
+    model_artifact_repo
+)
 from src.deployment.schemas.registry import RegisteredModelCreate, ModelVersionCreate
 
 logger = logging.getLogger(__name__)
@@ -29,6 +33,26 @@ class ModelRegistryService:
             await db.commit()
             await db.refresh(db_obj)
             return db_obj
+
+    async def get_registered_models(
+        self, db: AsyncSession, organization_id: uuid.UUID, skip: int = 0, limit: int = 100
+    ) -> List[RegisteredModel]:
+        return await registered_model_repo.get_by_org(db, organization_id, skip=skip, limit=limit)
+
+    async def get_registered_model(
+        self, db: AsyncSession, model_id: uuid.UUID
+    ) -> Optional[RegisteredModel]:
+        return await registered_model_repo.get(db, model_id)
+
+    async def get_model_versions(
+        self, db: AsyncSession, model_id: uuid.UUID, skip: int = 0, limit: int = 100
+    ) -> List[ModelVersion]:
+        return await model_version_repo.get_versions(db, model_id, skip=skip, limit=limit)
+
+    async def get_model_version(
+        self, db: AsyncSession, version_id: uuid.UUID
+    ) -> Optional[ModelVersion]:
+        return await model_version_repo.get(db, version_id)
 
     async def register_model_version(
         self, db: AsyncSession, version_in: ModelVersionCreate, artifacts: List[Dict[str, Any]]

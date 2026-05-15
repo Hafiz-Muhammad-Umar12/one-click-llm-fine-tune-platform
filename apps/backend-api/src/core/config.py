@@ -56,6 +56,16 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_EMAIL: str = "admin@platform.com"
     FIRST_SUPERUSER_PASSWORD: str = "changeme"
 
+    # STORAGE
+    STORAGE_BACKEND: str = "local" # local or s3
+    STORAGE_BASE_PATH: str = "/tmp/ai_artifacts"
+    
+    S3_BUCKET: str = "ai-platform-artifacts"
+    S3_ENDPOINT_URL: Optional[str] = None
+    S3_ACCESS_KEY: Optional[str] = None
+    S3_SECRET_KEY: Optional[str] = None
+    S3_REGION: str = "us-east-1"
+
     model_config = SettingsConfigDict(
         env_file=".env", 
         case_sensitive=True,
