@@ -22,3 +22,5 @@ fastapi-limiter>=0.1.5
 stripe>=7.0.0
 kubernetes>=26.1.0
 httpx>=0.24.0
+pytest
+pytest-cov
