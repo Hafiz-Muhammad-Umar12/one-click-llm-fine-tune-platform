@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # One-Click AI Fine-Tuning Platform
 
 An end-to-end, enterprise-grade AI infrastructure for fine-tuning and deploying Large Language Models (LLMs). This platform abstracts the complexity of GPU orchestration, allowing you to go from raw data to a production-ready, autoscaling inference endpoint with a single click.
@@ -950,4 +949,3 @@ Built on the shoulders of giants:
 [⭐ Star this repo](https://github.com/your-org/llm-finetuning-platform) • [🐛 Report a Bug](https://github.com/your-org/llm-finetuning-platform/issues) • [💡 Request a Feature](https://github.com/your-org/llm-finetuning-platform/issues)
 
 </div>
->>>>>>> d7adbe9cefe73654f65d1948e749a4ef78581a44
