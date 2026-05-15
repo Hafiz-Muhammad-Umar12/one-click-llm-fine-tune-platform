@@ -34,6 +34,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Scan for Null Bytes
+        run: |
+          if grep -Pa -r -l '\x00' . --include='*.py'; then
+            echo "Error: Null bytes (\x00) detected in Python source files. Likely UTF-16 encoding corruption."
+            exit 1
+          fi
+          
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
