@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 import redis.asyncio as redis
-from fastapi_limiter import FastAPILimiter
+from fastapi_limiter.limiter import FastAPILimiter
 from src.api.routers import api_router
 from src.core.config import settings
 from src.logging.logger import setup_logging
