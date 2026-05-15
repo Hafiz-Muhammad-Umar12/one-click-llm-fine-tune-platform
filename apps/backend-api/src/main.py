@@ -37,7 +37,7 @@ async def shutdown_event():
 
 # Set up CORS
 if settings.BACKEND_CORS_ORIGINS:
-...
+    app.add_middleware(
         CORSMiddleware,
         allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
         allow_credentials=True,
@@ -48,7 +48,6 @@ if settings.BACKEND_CORS_ORIGINS:
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
-...
 async def root():
     return {"message": "Welcome to the One-Click AI Platform API"}
 
