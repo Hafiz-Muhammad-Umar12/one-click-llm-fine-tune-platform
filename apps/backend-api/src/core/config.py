@@ -66,6 +66,12 @@ class Settings(BaseSettings):
     S3_SECRET_KEY: Optional[str] = None
     S3_REGION: str = "us-east-1"
 
+    # STRIPE
+    STRIPE_API_KEY: Optional[str] = None
+    STRIPE_WEBHOOK_SECRET: Optional[str] = None
+    STRIPE_PRICE_ID_PRO: Optional[str] = None
+    STRIPE_PRICE_ID_ENTERPRISE: Optional[str] = None
+
     model_config = SettingsConfigDict(
         env_file=".env", 
         case_sensitive=True,

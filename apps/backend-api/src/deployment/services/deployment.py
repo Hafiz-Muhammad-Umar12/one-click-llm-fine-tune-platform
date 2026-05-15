@@ -12,6 +12,9 @@ from src.deployment.repositories.deployment import (
 from src.deployment.services.registry import registry_service
 from src.deployment.schemas.deployment import DeploymentCreate, DeploymentResponse
 
+from src.deployment.kubernetes.orchestrator import k8s_deployer
+from src.deployment.runtime.vllm import VLLMRuntime, RuntimeConfig
+
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer(__name__)
 
@@ -58,10 +61,30 @@ class DeploymentService:
             await db.commit()
             await db.refresh(endpoint)
 
-            # 4. Trigger K8s Orchestration (to be implemented)
-            # await k8s_orchestrator.deploy_endpoint(endpoint)
+            # 4. Trigger K8s Orchestration
+            runtime_config = RuntimeConfig(
+                model_id=version.base_model,
+                model_version_id=str(version.id),
+                organization_id=str(organization_id),
+                hardware_tier=endpoint.hardware_tier
+            )
+            runtime = VLLMRuntime(runtime_config)
             
-            logger.info(f"Created Deployment Endpoint {endpoint.id} for organization {organization_id}")
+            svc_name = await k8s_deployer.deploy_endpoint(
+                endpoint_id=str(endpoint.id),
+                image=runtime.get_container_image(),
+                command=runtime.get_command(),
+                replicas=endpoint.target_replica_count,
+                gpu_count=1 # Simplified
+            )
+            
+            endpoint.k8s_service_name = svc_name
+            endpoint.k8s_deployment_name = svc_name
+            endpoint.status = "active" # In real, wait for readiness
+            db.add(endpoint)
+            await db.commit()
+            
+            logger.info(f"Created Deployment Endpoint {endpoint.id} on K8s")
             return endpoint
 
     async def get_deployments(

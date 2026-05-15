@@ -1,0 +1,18 @@
+[project]
+name = "mcp-server"
+version = "0.1.0"
+description = "MCP Server for the One-Click AI Platform"
+dependencies = [
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.22.0",
+    "pydantic>=2.0.0",
+    "mcp>=0.1.0",
+    "ai-platform-sdk"
+]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

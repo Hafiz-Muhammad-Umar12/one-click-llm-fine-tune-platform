@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # Database
   postgres:
     image: postgres:15-alpine
     environment:
@@ -11,21 +12,66 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ai_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
+  # Cache & Message Broker
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  # Placeholder for backend-api
-  # backend-api:
-  #   build: ./apps/backend-api
-  #   depends_on:
-  #     - postgres
-  #     - redis
-  #   environment:
-  #     DATABASE_URL: postgresql+asyncpg://user:password@postgres:5432/ai_platform
-  #     REDIS_URL: redis://redis:6379/0
+  # Core API Control Plane
+  backend-api:
+    build: 
+      context: ./apps/backend-api
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://user:password@postgres:5432/ai_platform
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: development_secret_key_change_me
+      STORAGE_BACKEND: local
+      STORAGE_BASE_PATH: /app/storage
+    volumes:
+      - ./storage:/app/storage
+
+  # Frontend Dashboard
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - backend-api
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+
+  # Agentic Interface (MCP)
+  mcp-server:
+    build:
+      context: ./apps/mcp-server
+      dockerfile: Dockerfile
+    depends_on:
+      - backend-api
+    environment:
+      AI_PLATFORM_API_KEY: dev_key_for_mcp
+      AI_PLATFORM_BASE_URL: http://backend-api:8000/api/v1
 
 volumes:
   postgres_data:

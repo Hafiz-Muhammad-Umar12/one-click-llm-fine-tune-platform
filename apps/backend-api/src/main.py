@@ -1,9 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
+import redis.asyncio as redis
+from fastapi_limiter import FastAPILimiter
 from src.api.routers import api_router
 from src.core.config import settings
 from src.logging.logger import setup_logging
 from src.websocket.manager import manager
+from src.middleware.audit import AuditMiddleware
 
 # Setup structured logging
 setup_logging()
@@ -14,13 +18,22 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Instrument the app for Prometheus metrics
+Instrumentator().instrument(app).expose(app)
+
+# Add Audit Logging Middleware
+app.add_middleware(AuditMiddleware)
+
 @app.on_event("startup")
 async def startup_event():
     await manager.broadcast.connect()
+    redis_instance = redis.from_url(settings.REDIS_URL, encoding="utf-8", decode_responses=True)
+    await FastAPILimiter.init(redis_instance)
 
 @app.on_event("shutdown")
 async def shutdown_event():
     await manager.broadcast.disconnect()
+    await FastAPILimiter.close()
 
 # Set up CORS
 if settings.BACKEND_CORS_ORIGINS:

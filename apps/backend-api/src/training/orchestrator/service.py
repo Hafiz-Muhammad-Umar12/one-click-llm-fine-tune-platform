@@ -1,5 +1,6 @@
 import uuid
 import logging
+from datetime import datetime
 from typing import Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from opentelemetry import trace
@@ -9,6 +10,7 @@ from src.training.runtimes.huggingface import TRLRuntime, AccelerateLauncher
 from src.training.kubernetes.job_manager import k8s_job_manager
 from src.training.schedulers.gpu_allocator import GPUAllocator
 from src.training.services.checkpoints import checkpoint_service
+from src.services.billing import usage_service
 
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -82,6 +84,8 @@ class OrchestratorService:
             
             job.k8s_job_name = k8s_job_name
             job.state = "running"
+            run.status = "running"
+            run.started_at = datetime.utcnow()
             
             # Audit Event
             event = TrainingEvent(
@@ -95,5 +99,35 @@ class OrchestratorService:
             await db.commit()
             await db.refresh(job)
             return job
+
+    async def complete_job(self, db: AsyncSession, job_id: uuid.UUID, final_state: str = "completed"):
+        """
+        Finalizes a training job and records usage for billing.
+        """
+        job = await db.get(TrainingJob, job_id)
+        if not job:
+            return
+
+        run = await db.get(TrainingRun, job.run_id)
+        job.state = final_state
+        run.status = final_state
+        run.completed_at = datetime.utcnow()
+
+        # Calculate Usage (duration in seconds)
+        if run.started_at:
+            duration = (run.completed_at - run.started_at).total_seconds()
+            await usage_service.record_usage(
+                db, 
+                organization_id=run.organization_id,
+                resource_type="gpu_seconds",
+                quantity=duration,
+                unit="seconds",
+                resource_id=str(job_id),
+                metadata={"gpu_type": "NVIDIA_L4"}
+            )
+
+        db.add(job)
+        db.add(run)
+        await db.commit()
 
 orchestrator_service = OrchestratorService()
