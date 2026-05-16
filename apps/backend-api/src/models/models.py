@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from sqlalchemy import String, Boolean, DateTime, ForeignKey, Table, Column, Text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -15,6 +15,7 @@ user_organization = Table(
     Column("organization_id", UUID(as_uuid=True), ForeignKey("organization.id", ondelete="CASCADE"), primary_key=True),
     Column("role", String(20), default="member", nullable=False), # owner, admin, member
     Column("created_at", DateTime, default=datetime.utcnow),
+    extend_existing=True,
 )
 
 class User(Base):

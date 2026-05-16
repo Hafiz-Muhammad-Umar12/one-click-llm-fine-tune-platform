@@ -1,6 +1,6 @@
 import secrets
 import hashlib
-from typing import Tuple
+from typing import Tuple, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.repositories.api_key import api_key_repo
 from src.models.models import APIKey

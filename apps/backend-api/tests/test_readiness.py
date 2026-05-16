@@ -1,6 +1,17 @@
 import pytest
+from unittest.mock import MagicMock, patch
 from src.datasets.preview.engine import DatasetPreviewEngine
 from src.datasets.validators.readiness import TrainingReadinessValidator, ReadinessDecision
+
+@pytest.fixture(autouse=True)
+def mock_tokenizer():
+    with patch("src.datasets.tokenizers.hf.AutoTokenizer.from_pretrained") as mock:
+        mock_instance = MagicMock()
+        # Mock encode to return a list of tokens based on string length
+        mock_instance.encode.side_effect = lambda x, **kwargs: [1] * (len(x) // 4 + 1)
+        mock_instance.decode.return_value = "decoded text"
+        mock.return_value = mock_instance
+        yield mock
 
 def test_preview_engine_alpaca():
     engine = DatasetPreviewEngine(tokenizer_name="meta-llama/Llama-3-8b", max_seq_length=512, format_type="alpaca")

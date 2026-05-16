@@ -16,18 +16,14 @@ class AuditMiddleware(BaseHTTPMiddleware):
         # Attempt to read request body
         try:
             # We need to receive the body, but also make it available for the actual route
+            # Using request.body() is safer if we don't manually override receive unless necessary
             body_bytes = await request.body()
-            
-            # Create a new receive function to return the bytes we just consumed
-            async def receive():
-                return {"type": "http.request", "body": body_bytes}
-            request._receive = receive
-            
             payload = json.loads(body_bytes.decode('utf-8')) if body_bytes else {}
         except Exception:
             payload = {}
 
         # Proceed with the request
+        # Note: request.body() caches the body, so call_next will still be able to read it
         response = await call_next(request)
 
         # Skip logging for safe/auth endpoints if needed, but for now log all mutative actions
