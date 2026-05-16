@@ -26,6 +26,7 @@ dependencies = [
     "prometheus-fastapi-instrumentator>=6.1.0",
     "slowapi>=0.1.9",
     "stripe>=7.0.0",
+    "bcrypt==4.0.1",
     "kubernetes>=26.1.0"
 ]
 
